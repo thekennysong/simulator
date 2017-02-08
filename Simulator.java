@@ -9,7 +9,7 @@ import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-
+/** This class is for handling errors */
 class Errors{
     private Errors(){};
 
@@ -23,8 +23,10 @@ class Errors{
     }
 }
 
+/** Will eventually fill this out with code */
 class Wire{}
 
+/** Contains code needs for 2 a and b */
 class Gate{
     String name;
     float delay;
@@ -41,12 +43,13 @@ class Gate{
 
 
     public String toString(){
-        return "Name of gate: " + name + "Delay is: " + delay;
+        return "Name of gate: " + name + " Delay is: " + delay;
     }
 
 
 }
 
+/** Main class, where we initialize the gates read from the text file */
 class Simulator{
 
     static LinkedList <Gate> gates = new LinkedList <Gate> ();
@@ -63,6 +66,8 @@ class Simulator{
 
             }
         }
+
+        System.out.println(gates.toString());
 
 
 
