@@ -1,0 +1,2 @@
+gate A 0.6
+gate B 1.7
