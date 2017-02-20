@@ -165,7 +165,7 @@ public class TernaryLogic{
                 }
 
                 String type = sc.next();
-                if( name.length() > 0 || ( isNumeric(name) && isEven(name) ) ){
+                if( name.length() > 0 && isNumericLetters(name) ){
                      switch (type) {
                         case "min":  gates.add( new MinGate( name, sc) ); break;
                         case "max":  gates.add( new MaxGate( name, sc) ); break;
@@ -178,7 +178,7 @@ public class TernaryLogic{
 
                 } else{
                      Errors.fatal(
-                        "gate name is not entered correctly"
+                        "Gate: " + name + " is not entered correctly. Only letters and numbers."
                     );
                 }
 
@@ -230,14 +230,15 @@ public class TernaryLogic{
         }
     }
 
-    public static boolean isNumeric(String s) {
-        return s.matches("[-+]?\\d*\\.?\\d+");
+    public static boolean isNumericLetters(String s) {
+        return s.matches("[a-zA-Z0-9]*");
     }
 
-    public static boolean isEven(String s){
-        int number = Integer.parseInt(s);
-        if ( (number & 1) == 0 ) {return true; } else { return false; }
-    }
+
+    // public static boolean isEven(String s){
+    //     int number = Integer.parseInt(s);
+    //     if ( (number & 1) == 0 ) {return true; } else { return false; }
+    // }
 
     public static void main(String[] args) {
         if( args.length < 1){
