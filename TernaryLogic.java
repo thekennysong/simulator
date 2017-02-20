@@ -31,10 +31,10 @@ class Wire{
     String destination;
     float delay;
 
-    public Wire(Scanner sc){
+    public Wire(String sour, String dest, Scanner sc){
 
-        source = sc.next();
-        destination = sc.next();
+        source = sour;
+        destination = dest;
 
 
         if (!sc.hasNextFloat() && sc.nextFloat() <= 0 ) {
@@ -45,35 +45,83 @@ class Wire{
         delay = sc.nextFloat();
     }
 
+    public String toString(){
+        return source + " " + destination + " " + delay;
+    }
+
+
 }
 
+class MinGate extends Gate {
+    public MinGate( String n, Scanner sc ) {
+        super( n, sc, "min" );
+    }
+
+}
+class MaxGate extends Gate {
+    public MaxGate( String n, Scanner sc ) {
+        super( n, sc, "max" );
+    }
+
+}
+class NegGate extends Gate {
+    public NegGate( String n, Scanner sc ) {
+        super( n, sc, "neg" );
+    }
+}
+class TrueGate extends Gate {
+    public TrueGate( String n, Scanner sc ) {
+        super( n, sc, "istrue" );
+    }
+}
+class FalseGate extends Gate {
+    public FalseGate( String n, Scanner sc ) {
+        super( n, sc, "isfalse" );
+    }
+}
+class UnknownGate extends Gate {
+    public UnknownGate( String n, Scanner sc ) {
+        super( n, sc, "isunknown" );
+
+    }
+}
 
 class Gate{
     String name;
     float delay;
     String type;
-    int totalInputs;
+    int totalInputs = 0;
+    int totalInputsPermitted = 0;
 
     int output;
     LinkedList <Wire> wires;
 
 
-    public Gate(Scanner sc){
-        name = sc.next();
-
-        if(gateNames.contains(name)){
-           Errors.fatal("gate name " + name + " already exists");
+    public Gate(String name, Scanner sc, String type){
+        this.name = name;
+        this.type = type;
+        if( !sc.hasNextInt() ){
+            Errors.fatal(name + "permitted inputs not entered correctly");
+        }
+        totalInputsPermitted  = sc.nextInt();
+        if( totalInputsPermitted <= 0 ){
+            Errors.fatal("permitted inputs must be greater than 0");
         }
 
-        type = sc.next();
-        if(Integer.parseInt(sc.next()) > 0){
-            totalInputs = Integer.parseInt(sc.next());
-        } else{
-            Errors.fatal("inputs must be gerater than 0");
+
+
+        if(!sc.hasNextFloat()){
+            Errors.fatal(name + " delay not entered correctly");
         }
-        if(sc.hasNextFloat() && sc.nextFloat() > 0){
-            delay = sc.nextFloat();
+        delay = sc.nextFloat();
+
+        if(delay <= 0){
+            Errors.fatal("permitted inputs must be greater than 0");
         }
+
+
+
+
 
 
     }
@@ -83,61 +131,20 @@ class Gate{
      * @return part b answer here
      */
     public String toString(){
-        return "Gate " + name + delay;
+        return name + " " + type + " " + totalInputsPermitted + " " + delay;
     }
 
 
 }
 
-class MinGate extends Gate {
-    public MinGate( Scanner sc ) {
-        super( sc );
-    }
-    public void checkCorrectness() {
 
-        if ( wires.size() == 0 ) {
-            Errors.fatal(
-                "No wires to gate"
-            );
-        }
-    }
-
-
-
-}
-class MaxGate extends Gate {
-    public MaxGate( Scanner sc ) {
-        super( sc );
-    }
-
-}
-class NegGate extends Gate {
-    public NegGate( Scanner sc ) {
-        super( sc );
-    }
-}
-class TrueGate extends Gate {
-    public TrueGate( Scanner sc ) {
-        super( sc );
-    }
-}
-class FalseGate extends Gate {
-    public FalseGate( Scanner sc ) {
-        super( sc );
-    }
-}
-class UnknownGate extends Gate {
-    public UnknownGate( Scanner sc ) {
-        super( sc );
-    }
-}
 /** Main class, where we initialize the gates read from the text file */
 public class TernaryLogic{
 
     static LinkedList <Gate> gates = new LinkedList <Gate> ();
     static LinkedList <Wire> wires = new LinkedList <Wire> ();
-    ArrayList<String> gateNames = new ArrayList<String>();
-    String[] gateTypes = {"min", "max", "neg", "istrue", "isfalse", "isunknown"};
+    static ArrayList<String> gateNames = new ArrayList<String>();
+    //String[] gateTypes = {"min", "max", "neg", "istrue", "isfalse", "isunknown"};
 
     /**
      * Part a answer, rest of answer for part a can be seen in the Gate class.
@@ -148,17 +155,26 @@ public class TernaryLogic{
         while(sc.hasNextLine()){
             String command  = sc.next();
 
+            for(Gate gate: gates){
+                gateNames.add(gate.name);
+            }
+
             if(command.equals("gate")){
                 String name = sc.next();
+
+                if(gateNames.contains(name)){
+                   Errors.fatal("gate name " + name + " already exists");
+                }
+
                 String type = sc.next();
                 if( name.length() > 0 || ( isNumeric(name) && isEven(name) ) ){
                      switch (type) {
-                        case "min": gates.add( new MinGate(sc) ); break;
-                        case "max": gates.add( new MaxGate(sc) ); break;
-                        case "neg": gates.add( new NegGate(sc) ); break;
-                        case "istrue": gates.add( new TrueGate(sc) ); break;
-                        case "isfalse": gates.add( new FalseGate(sc) ); break;
-                        case "isunknown": gates.add( new UnknownGate(sc) ); break;
+                        case "min":  gates.add( new MinGate( name, sc) ); break;
+                        case "max":  gates.add( new MaxGate( name, sc) ); break;
+                        case "neg":  gates.add( new NegGate( name, sc) ); break;
+                        case "istrue":  gates.add( new TrueGate( name, sc) ); break;
+                        case "isfalse":  gates.add( new FalseGate( name, sc) ); break;
+                        case "isunknown":  gates.add( new UnknownGate( name, sc) ); break;
                         default:  Errors.fatal("gate type not entered correctly"); break;
                      }
 
@@ -173,27 +189,58 @@ public class TernaryLogic{
             } else if(command.equals("wire")){
 
                 String source = sc.next();
+
+                if(source == null){
+                    Errors.fatal("need wire source");
+                }
+
+
                 String destination = sc.next();
+
+                if(destination == null){
+                    Errors.fatal("need wire destination");
+                }
+
+
                 //for (Integer vertex : entry.getValue()) {
 
-                for(Gate gate: gates){
-                    gateNames.add(gate.name);
-                }
+
                 if(gateNames.contains(source) && gateNames.contains(destination) && !source.equals(destination)){
-                    wires.add( new Wire(sc) );
+                    wires.add( new Wire( source, destination, sc) );
                 } else{
                      Errors.fatal(
-                        "wire destination/source not entered correctly"
+                        "wire " + source + " " + destination +  "destination/source not entered correctly"
                     );
                 }
 
             }
         }
 
+      // for(Wire wire: wires){
+      //       if(name.equals(wire.destination)){
+      //           totalInputs++;
+      //       }
+      //   }
+
+      //   if(totalInputs == 0){
+      //       Errors.fatal("Gate has no inputs");
+      //   }
+
+      //   if(totalInputs > totalInputsPermitted){
+      //       Errors.fatal("Total inputs to gate " + name + " exceeds it total input permitted");
+      //   }
+
+
+
     }
 
     private static void printGatesAndWires(){
-
+        for (Gate g: gates) {
+            System.out.println( g.toString() );
+        }
+        for (Wire w: wires) {
+            System.out.println( w.toString() );
+        }
     }
 
     public static boolean isNumeric(String s) {
