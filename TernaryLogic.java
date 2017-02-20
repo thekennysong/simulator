@@ -37,12 +37,12 @@ class Wire{
         this.destination = destination;
 
         if(!sc.hasNextFloat()){
-            Errors.fatal("delay not entered correctly");
+            Errors.fatal("wire " + this.source + " " + this.destination + " delay not entered correctly");
         }
         delay = sc.nextFloat();
 
         if(delay <= 0){
-            Errors.fatal(" delay must be greater than 0");
+            Errors.fatal("wire " + this.source + " " + this.destination + " delay must be greater than 0");
         }
 
     }
