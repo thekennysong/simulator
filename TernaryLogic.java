@@ -31,22 +31,24 @@ class Wire{
     String destination;
     float delay;
 
-    public Wire(String sour, String dest, Scanner sc){
+    public Wire(String source, String destination, Scanner sc){
 
-        source = sour;
-        destination = dest;
+        this.source = source;
+        this.destination = destination;
 
-
-        if (!sc.hasNextFloat() && sc.nextFloat() <= 0 ) {
-            Errors.fatal(
-                "travel time invalid. Must be a float greater than 0."
-            );
+        if(!sc.hasNextFloat()){
+            Errors.fatal("delay not entered correctly");
         }
         delay = sc.nextFloat();
+
+        if(delay <= 0){
+            Errors.fatal(" delay must be greater than 0");
+        }
+
     }
 
     public String toString(){
-        return source + " " + destination + " " + delay;
+        return "wire " + source + " " + destination + " " + delay;
     }
 
 
@@ -101,11 +103,11 @@ class Gate{
         this.name = name;
         this.type = type;
         if( !sc.hasNextInt() ){
-            Errors.fatal(name + "permitted inputs not entered correctly");
+            Errors.fatal(name + " permitted inputs not entered correctly");
         }
         totalInputsPermitted  = sc.nextInt();
         if( totalInputsPermitted <= 0 ){
-            Errors.fatal("permitted inputs must be greater than 0");
+            Errors.fatal(name + " permitted inputs must be greater than 0");
         }
 
 
@@ -116,12 +118,8 @@ class Gate{
         delay = sc.nextFloat();
 
         if(delay <= 0){
-            Errors.fatal("permitted inputs must be greater than 0");
+            Errors.fatal(name + " delay must be greater than 0");
         }
-
-
-
-
 
 
     }
@@ -131,7 +129,7 @@ class Gate{
      * @return part b answer here
      */
     public String toString(){
-        return name + " " + type + " " + totalInputsPermitted + " " + delay;
+        return "gate " + name + " " + type + " " + totalInputsPermitted + " " + delay;
     }
 
 
@@ -163,7 +161,7 @@ public class TernaryLogic{
                 String name = sc.next();
 
                 if(gateNames.contains(name)){
-                   Errors.fatal("gate name " + name + " already exists");
+                   Errors.fatal("Gate: " + name + " already exists");
                 }
 
                 String type = sc.next();
@@ -175,7 +173,7 @@ public class TernaryLogic{
                         case "istrue":  gates.add( new TrueGate( name, sc) ); break;
                         case "isfalse":  gates.add( new FalseGate( name, sc) ); break;
                         case "isunknown":  gates.add( new UnknownGate( name, sc) ); break;
-                        default:  Errors.fatal("gate type not entered correctly"); break;
+                        default:  Errors.fatal("entered type: " + type + " is not a gate type/entered correctly"); break;
                      }
 
                 } else{
@@ -183,39 +181,30 @@ public class TernaryLogic{
                         "gate name is not entered correctly"
                     );
                 }
-               // gates.add( new Gate(sc) );
-                //System.out.println( new Gate(sc) );
+
 
             } else if(command.equals("wire")){
 
                 String source = sc.next();
-
-                if(source == null){
-                    Errors.fatal("need wire source");
-                }
-
-
                 String destination = sc.next();
-
-                if(destination == null){
-                    Errors.fatal("need wire destination");
-                }
-
-
-                //for (Integer vertex : entry.getValue()) {
 
 
                 if(gateNames.contains(source) && gateNames.contains(destination) && !source.equals(destination)){
                     wires.add( new Wire( source, destination, sc) );
                 } else{
                      Errors.fatal(
-                        "wire " + source + " " + destination +  "destination/source not entered correctly"
+                        "wire " + source + " " + destination +  " destination/source not entered correctly"
                     );
                 }
 
+            } else{
+                Errors.fatal(command + " found where Gate or Wire was suppose to be");
             }
         }
 
+    /**
+     * Please ignore this comment block.
+     */
       // for(Wire wire: wires){
       //       if(name.equals(wire.destination)){
       //           totalInputs++;
@@ -229,8 +218,6 @@ public class TernaryLogic{
       //   if(totalInputs > totalInputsPermitted){
       //       Errors.fatal("Total inputs to gate " + name + " exceeds it total input permitted");
       //   }
-
-
 
     }
 
