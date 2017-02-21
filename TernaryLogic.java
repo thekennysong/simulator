@@ -10,7 +10,7 @@ import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-/** This class is for handling errors */
+/** This class is for handling errors. Credit to Douglas Jones */
 class Errors{
     private Errors(){};
 
@@ -42,7 +42,7 @@ class Wire{
         delay = sc.nextFloat();
 
         if(delay <= 0){
-            Errors.fatal("wire " + this.source + " " + this.destination + " delay must be greater than 0");
+            Errors.warn("wire " + this.source + " " + this.destination + " delay must be greater than 0");
         }
 
     }
@@ -118,7 +118,7 @@ class Gate{
         delay = sc.nextFloat();
 
         if(delay <= 0){
-            Errors.fatal(name + " delay must be greater than 0");
+            Errors.warn(name + " delay must be greater than 0");
         }
 
 
@@ -192,13 +192,19 @@ public class TernaryLogic{
                 if(gateNames.contains(source) && gateNames.contains(destination) && !source.equals(destination)){
                     wires.add( new Wire( source, destination, sc) );
                 } else{
-                     Errors.fatal(
-                        "wire " + source + " " + destination +  " destination/source not entered correctly"
-                    );
+                    if(!gateNames.contains(source) || !gateNames.contains(destination)){
+                        Errors.fatal(
+                            "wire " + source + " " + destination +  " destination and/or source not entered correctly"
+                        );
+                    } else if(source.equals(destination)){
+                        Errors.fatal(
+                            "wire " + source + " " + destination +  " cannot have same source and destination"
+                        );
+                    }
                 }
 
             } else{
-                Errors.fatal(command + " found where Gate or Wire was suppose to be");
+                Errors.fatal(command + " found where 'gate' or 'wire' was suppose to be");
             }
         }
 
@@ -234,11 +240,6 @@ public class TernaryLogic{
         return s.matches("[a-zA-Z0-9]*");
     }
 
-
-    // public static boolean isEven(String s){
-    //     int number = Integer.parseInt(s);
-    //     if ( (number & 1) == 0 ) {return true; } else { return false; }
-    // }
 
     public static void main(String[] args) {
         if( args.length < 1){
