@@ -1,7 +1,7 @@
 /** TernaryLogic.java
  * @author Douglas Jones (for Errors class and some handling)
  * @author Kenny Song
- * @version MP2
+ * @version MP3
  */
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.regex.Pattern;
+import java.util.NoSuchElementException;
 
 /** This class is for handling errors. Credit to Douglas Jones */
 class Errors{
@@ -21,6 +23,68 @@ class Errors{
     public static void fatal(String message){
         System.out.println( "Fatal error: " + message );
         System.exit(-1);
+    }
+}
+
+/** Support methods for scanning
+ *  @see Errors
+ *  @author Douglas Jones
+ */
+class ScanSupport {
+
+    /** Pattern for identifers
+     */
+    public static final Pattern name
+        = Pattern.compile( "[a-zA-Z0-9_]*" );
+
+    /** Pattern for whitespace excluding things like newline
+     */
+    public static final Pattern whitespace
+        = Pattern.compile( "[ \t]*" );
+
+    /** Get next name without skipping to next line (unlike sc.Next())
+     *  @param sc the scanner from which end of line is scanned
+     *  @return the name, if there was one, or an empty string
+     */
+    public static String nextName( Scanner sc ) {
+        sc.skip( whitespace );
+
+        // the following is weird code, it skips the name
+        // and then returns the string that matched what was skipped
+        sc.skip( name );
+        return sc.match().group();
+    }
+
+    /** Advance to next line and complain if is junk at the line end
+     *  @see Errors
+     *  @param message gives a prefix to give context to error messages
+     *  @param sc the scanner from which end of line is scanned
+     */
+    public static void lineEnd( Scanner sc, String message ) {
+        sc.skip( whitespace );
+        if(sc.hasNextLine()){
+            String lineEnd = sc.nextLine();
+            //System.out.println(lineEnd);
+            if ( !lineEnd.equals( "" )) {
+                Errors.warn(
+                    message +
+                    " followed unexpected by '" + lineEnd + "'"
+                );
+            }
+        } else{
+            try{
+                String lineEnd = sc.nextLine();
+                if ( !lineEnd.equals( "" )) {
+                    Errors.warn(
+                        message +
+                        " followed unexpected by '" + lineEnd + "'"
+                    );
+                }
+
+            } catch(NoSuchElementException e){
+                //do nothing
+            }
+        }
     }
 }
 
@@ -45,6 +109,10 @@ class Wire{
             Errors.warn("wire " + this.source + " " + this.destination + " delay must be greater than 0");
         }
 
+        ScanSupport.lineEnd( sc,
+            "Wire '" + this.source +
+            "' '" + this.destination + "'"
+        );
     }
 
     public String toString(){
@@ -55,72 +123,209 @@ class Wire{
 }
 
 class MinGate extends Gate {
-    public MinGate( String n, Scanner sc ) {
-        super( n, sc, "min" );
+    public MinGate( String name, Scanner sc, Float delay, int totalInputsPermitted ) {
+        super( name, "min", delay, totalInputsPermitted );
+
+        ScanSupport.lineEnd( sc,
+            "MinGate '" + name + "'"
+        );
+
+    }
+
+    /** output this Intersection in a format like that used for input
+     */
+    public String toString() {
+        return(
+            super.toString() +
+            totalInputsPermitted + " " +
+            delay
+        );
     }
 
 }
 class MaxGate extends Gate {
-    public MaxGate( String n, Scanner sc ) {
-        super( n, sc, "max" );
+
+
+
+    public MaxGate( String name, Scanner sc, Float delay, int totalInputsPermitted ) {
+        super( name, "max", delay, totalInputsPermitted );
+
+        ScanSupport.lineEnd( sc,
+            "MaxGate '" + name + "'"
+        );
+
+
     }
+
+    /** output this Intersection in a format like that used for input
+     */
+    public String toString() {
+        return(
+            super.toString() +
+            totalInputsPermitted + " " +
+            delay
+        );
+    }
+
+
 
 }
 class NegGate extends Gate {
-    public NegGate( String n, Scanner sc ) {
-        super( n, sc, "neg" );
+    public NegGate( String name, Scanner sc, Float delay ) {
+        super( name, "neg", delay, 1 );
+
+        ScanSupport.lineEnd( sc,
+            "NegGate '" + name + "'"
+        );
+
     }
+
+    /** output this Intersection in a format like that used for input
+     */
+    public String toString() {
+        return(
+            super.toString() +
+            delay
+        );
+    }
+
+
 }
 class TrueGate extends Gate {
-    public TrueGate( String n, Scanner sc ) {
-        super( n, sc, "istrue" );
+    public TrueGate( String name, Scanner sc, Float delay ) {
+        super( name, "istrue", delay, 1 );
+
+        ScanSupport.lineEnd( sc,
+            "TrueGate '" + name + "'"
+        );
+
     }
+
+    /** output this Intersection in a format like that used for input
+     */
+    public String toString() {
+        return(
+            super.toString() +
+            delay
+        );
+    }
+
+
 }
 class FalseGate extends Gate {
-    public FalseGate( String n, Scanner sc ) {
-        super( n, sc, "isfalse" );
+    public FalseGate( String name, Scanner sc, Float delay ) {
+        super( name, "isfalse", delay, 1 );
+
+        ScanSupport.lineEnd( sc,
+            "FalseGate '" + name + "'"
+        );
+
     }
+
+    /** output this Intersection in a format like that used for input
+     */
+    public String toString() {
+        return(
+            super.toString() +
+            delay
+        );
+    }
+
+
 }
 class UnknownGate extends Gate {
-    public UnknownGate( String n, Scanner sc ) {
-        super( n, sc, "isunknown" );
+    public UnknownGate( String name, Scanner sc, Float delay ) {
+        super( name, "isunknown", delay, 1 );
+
+        ScanSupport.lineEnd( sc,
+            "UnknownGate '" + name + "'"
+        );
+
 
     }
+    /** output this Intersection in a format like that used for input
+     */
+    public String toString() {
+        return(
+            super.toString() +
+            delay
+        );
+    }
+
 }
 
-class Gate{
-    String name;
+abstract class Gate{
+    public final String name;
     float delay;
-    String type;
+    public final String type;
     int totalInputs = 0;
     int totalInputsPermitted = 0;
+
 
     int output;
     LinkedList <Wire> wires;
 
-
-    public Gate(String name, Scanner sc, String type){
+    protected Gate( String name, String type, Float delay, int totalInputsPermitted ) {
         this.name = name;
         this.type = type;
-        if( !sc.hasNextInt() ){
-            Errors.fatal(name + " permitted inputs not entered correctly");
-        }
-        totalInputsPermitted  = sc.nextInt();
-        if( totalInputsPermitted <= 0 ){
-            Errors.fatal(name + " permitted inputs must be greater than 0");
-        }
+        this.delay = delay;
+        this.totalInputsPermitted = totalInputsPermitted;
+
+    }
+
+    public static Gate newGate(String name, Scanner sc, String type){
+        //String gateName = name;
+        int totalInputsPermitted = 0;
+        float delay;
+
+        if("min".equals(type) || "max".equals(type) ){
+            if( !sc.hasNextInt() ){
+                Errors.warn(name + " permitted inputs not entered correctly");
+                return null;
+            } else{
+
+                totalInputsPermitted  = sc.nextInt();
+                if( totalInputsPermitted <= 0 ){
+                    Errors.warn(name + " permitted inputs must be greater than 0");
+                    return null;
+                }
+
+            }
 
 
+        }
 
         if(!sc.hasNextFloat()){
             Errors.fatal(name + " delay not entered correctly");
-        }
-        delay = sc.nextFloat();
+            return null;
+        } else{
 
-        if(delay <= 0){
-            Errors.warn(name + " delay must be greater than 0");
+            delay = sc.nextFloat();
+            if(delay <= 0){
+                Errors.warn(name + " delay must be greater than 0");
+                return null;
+            }
+
         }
 
+
+        switch (type) {
+            case "min":
+                return new MinGate( name, sc, delay, totalInputsPermitted );
+            case "max":
+                return new MaxGate( name, sc, delay, totalInputsPermitted );
+            case "neg":
+                return new NegGate( name, sc, delay );
+            case "istrue":
+                return new TrueGate( name, sc, delay );
+            case "isfalse":
+                return new FalseGate( name, sc, delay );
+            case "isunknown":
+                return new UnknownGate( name, sc, delay );
+            default:
+                Errors.fatal("entered type: " + type + " is not a gate type/entered correctly");
+                return null;
+        }
 
     }
 
@@ -129,7 +334,7 @@ class Gate{
      * @return part b answer here
      */
     public String toString(){
-        return "gate " + name + " " + type + " " + totalInputsPermitted + " " + delay;
+        return "gate " + name + " " + type + " ";
     }
 
 
@@ -157,7 +362,7 @@ public class TernaryLogic{
                 gateNames.add(gate.name);
             }
 
-            if(command.equals("gate")){
+            if("gate".equals(command)){
                 String name = sc.next();
 
                 if(gateNames.contains(name)){
@@ -166,16 +371,10 @@ public class TernaryLogic{
 
                 String type = sc.next();
                 if( name.length() > 0 && isNumericLetters(name) ){
-                     switch (type) {
-                        case "min":  gates.add( new MinGate( name, sc) ); break;
-                        case "max":  gates.add( new MaxGate( name, sc) ); break;
-                        case "neg":  gates.add( new NegGate( name, sc) ); break;
-                        case "istrue":  gates.add( new TrueGate( name, sc) ); break;
-                        case "isfalse":  gates.add( new FalseGate( name, sc) ); break;
-                        case "isunknown":  gates.add( new UnknownGate( name, sc) ); break;
-                        default:  Errors.fatal("entered type: " + type + " is not a gate type/entered correctly"); break;
-                     }
-
+                    Gate gate = Gate.newGate(name, sc, type );
+                    if (gate != null) {
+                        gates.add( gate );
+                    }
                 } else{
                      Errors.fatal(
                         "Gate: " + name + " is not entered correctly. Only letters and numbers."
@@ -183,7 +382,7 @@ public class TernaryLogic{
                 }
 
 
-            } else if(command.equals("wire")){
+            } else if("wire".equals(command)){
 
                 String source = sc.next();
                 String destination = sc.next();

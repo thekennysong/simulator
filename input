@@ -2,7 +2,7 @@ gate A min 4 1.0
 gate B max 2 0.5
 wire A B 0.1
 wire B A 0.3
-gate C neg 2 0.5
+gate C neg 0.5
 
-wire A C 0.1
-wire C B 0.1
+wire A C 0.1 dd
+wire C B 0.1 dde
