@@ -550,10 +550,11 @@ class UnknownGate extends Gate {
             } else{
                 newOutput = 0;
             }
-            if(o != newOutput){
+            if(output != newOutput){
+                final int old = output;
                 Simulation.schedule(
                         time + delay,
-                        (float t) -> outputChange( t, output, newOutput )
+                        (float t) -> outputChange( t, old, newOutput )
                 );
                 this.output = newOutput;
             }
