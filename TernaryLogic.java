@@ -403,9 +403,11 @@ class NegGate extends Gate {
         //output = 0;
 
     }
+    //do our check here whether we need to change gate value based on new wire input value
     public void inputChange( float time, int o, int n ) {
-        //System.out.println("neg gate");
-        if(o != n){
+        //System.out.println(o + " neg gate " + output + " "+ n);
+       // if(o != n){
+
             final int newOutput;
             if(n == 0){
                 newOutput = 2;
@@ -414,16 +416,17 @@ class NegGate extends Gate {
             } else{
                 newOutput = 0;
             }
-
-            Simulation.schedule(
-                    time + delay,
-                    (float t) -> this.outputChange( t, output, newOutput )
-            );
-            this.output = newOutput;
-
+            if(output != newOutput){
+                final int old = output;
+                Simulation.schedule(
+                        time + delay,
+                        (float t) -> this.outputChange( t, old, newOutput )
+                );
+                this.output = newOutput;
+            }
             //TernaryLogic.printGatesOutputs();
 
-        }
+        //}
 
     }
     //public void outputChange( float time, int o, int n ) {}
@@ -452,24 +455,26 @@ class TrueGate extends Gate {
         );
         //output = 0;
     }
+    //do our check here whether we need to change gate value based on new wire input value
     public void inputChange( float time, int o, int n ) {
-        //System.out.println("true gate");
-        if(o != n){
+        //System.out.println(o + " true gate " + output + " "+ n);
+      //  if(o != n){
             final int newOutput;
             if( n == 2 ){
                 newOutput = 2;
             } else{
                 newOutput = 0;
             }
-
-            Simulation.schedule(
-                    time + delay,
-                    (float t) -> outputChange( t, output, newOutput )
-            );
-            this.output = newOutput;
-
+            if(output != newOutput){
+                final int old = output;
+                Simulation.schedule(
+                        time + delay,
+                        (float t) -> this.outputChange( t, old, newOutput )
+                );
+                this.output = newOutput;
+            }
             //TernaryLogic.printGatesOutputs();
-        }
+       // }
 
     }
 
@@ -498,24 +503,25 @@ class FalseGate extends Gate {
         );
         //output = 0;
     }
+    //do our check here whether we need to change gate value based on new wire input value
     public void inputChange( float time, int o, int n ) {
-        //System.out.println("false gate");
-        if(o != n){
+        //o is old input wire value, n is new input wire value, output is old gate value
+
             final int newOutput;
             if( n == 0 ){
                 newOutput = 2;
             } else{
                 newOutput = 0;
             }
+            if(output != newOutput){
+                final int old = output;
+                Simulation.schedule(
+                        time + delay,
+                        (float t) -> this.outputChange( t, old, newOutput )
+                );
+                this.output = newOutput;
+            }
 
-            Simulation.schedule(
-                    time + delay,
-                    (float t) -> outputChange( t, output, newOutput )
-            );
-            this.output = newOutput;
-
-            //TernaryLogic.printGatesOutputs();
-        }
 
     }
     /** output this Intersection in a format like that used for input
@@ -544,26 +550,27 @@ class UnknownGate extends Gate {
 
 
     }
-
+    //do our check here whether we need to change gate value based on new wire input value
     public void inputChange( float time, int o, int n ) {
-        //System.out.println("unknown gate");
-        if(o != n){
+        //System.out.println(o + " unknown gate " + output + " "+ n);
+       // if(o != n){
             final int newOutput;
             if( n == 1 ){
                 newOutput = 2;
             } else{
                 newOutput = 0;
             }
-
-            Simulation.schedule(
-                    time + delay,
-                    (float t) -> outputChange( t, output, newOutput )
-            );
-            this.output = newOutput;
+            if(o != newOutput){
+                Simulation.schedule(
+                        time + delay,
+                        (float t) -> outputChange( t, output, newOutput )
+                );
+                this.output = newOutput;
+            }
             //System.out.println("outp");
 
             //TernaryLogic.printGatesOutputs();
-        }
+        //}
 
     }
 
