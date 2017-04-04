@@ -1,7 +1,7 @@
 /** TernaryLogic.java
- * @author Douglas Jones (for Errors class and some handling)
+ * @author Douglas Jones (for Errors class and some handling and the lambda expression set up and also the Simulation class)
  * @author Kenny Song
- * @version MP3
+ * @version MP4
  */
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -147,13 +147,13 @@ class Wire{
     Gate source;
     Gate destination;
     float delay;
-    int value = 1;
-    //private int dir;
+    int value = 1; //this will hold the value of the wire*important*
+
 
     public Wire(String source, String destination, Scanner sc){
         String srcName = source;
         String dstName = destination;
-
+        //find the source based on name
         this.source = TernaryLogic.findGate( srcName );
         if (source == null) {
             Errors.warn(
@@ -162,7 +162,7 @@ class Wire{
                 "' source undefined."
             );
         }
-
+        //find the destination based on name
         this.destination = TernaryLogic.findGate( dstName );
         if (destination == null) {
             Errors.warn(
@@ -188,26 +188,26 @@ class Wire{
             "' '" + dstName + "'"
         );
 
-        // let the source and destination know about this road
+        // let the source and destination know about this wire
         if (this.destination != null){
             this.destination.addIncoming( this );
         }
         if (this.source != null) {
             this.source.addOutgoing( this );
         }
-       // System.out.println(this.destination + "dst");
-        //System.out.println(this.source + "src");
-    }
 
+    }
+    //input change, check if we need to change the wire value and call a corresponding input change for gates
     public void inputChange(float t, int o, int n){
-        //System.out.println(o + " !!!!!wire " + n);
+
+        //o and this.value are the same value, in that it is the old wire value
         if(o != n){
-            // System.out.println(o + " wire input change " + n);
             // Simulator.schedule(
             //     t+delay,
-            //     (float time)->this.oc( time, this.value, n )
+            //     (float time)->outputChange( time, this.value, n )
             // );
-
+            //
+            //Doing lambda and regular would take same amoutn of code
             Simulation.schedule(
                 t+delay,
                 new Simulation.Action(){
@@ -216,14 +216,13 @@ class Wire{
                     }
             });
             this.value = n;
-            //System.out.println(o + " diff " + this.value );
+
         }
     }
     public void outputChange(float time, int o, int n){
 
-        //System.out.println("helloooooooo");
-        //System.out.println(destination.type);
 
+        //are able to trigger input change for wire that has changed. don't have to worry about direction since can use destination variable
         Simulation.schedule(
             time,
             new Simulation.Action(){
@@ -237,12 +236,16 @@ class Wire{
         //     (float t)->destination.inputChange( t, o, n )
         // );
     }
-
+    //print values of the wire
     public String toString(){
         return "wire " + source + " " + destination + " " + delay + " " + value;
     }
 
-
+    /** check this road to see if it meets global sanity constraints
+     */
+    public void check() {
+        // nothing to check.
+    }
 }
 
 class MinGate extends Gate {
@@ -252,23 +255,13 @@ class MinGate extends Gate {
         ScanSupport.lineEnd( sc,
             "MinGate '" + name + "'"
         );
-        //if(type != "isunknown"){
+
         //Before the simulation begins, each such gate should immediately schedule an output transition from unknown to false (represented by the value 0) at a time equal to the gate's delay.
-        //System.out.println(incoming.size() + "incoming");
-        //System.out.println(output + " min");
         Simulation.schedule(
                 delay,
                 (float t) -> this.outputChange( t, output, 0 )
         );
-        //System.out.println(output + " min");
-        //output = 0;
-        // } else{
-        //     Simulation.schedule(
-        //             delay,
-        //             (float t) -> this.outputChange( t, output, 2 )
-        //     );
-        //     output = 2;
-        // }
+
     }
 
     public void inputChange( float time, int o, int n ) {
@@ -290,13 +283,12 @@ class MinGate extends Gate {
         } else{
             newOutput = 2;
         }
-        //final int newOutput = smallestIndex;
 
+        //if current out is not the same as new, we will proceed with changing wires coming from this gate
         if (output != newOutput) {
                 final int old = output;
                 final int n1 = newOutput;
-                //System.out.println(old + " old");
-                //System.out.println(n1 + " new");
+
                 Simulation.schedule(
                         time + delay,
                         (float t) -> this.outputChange( t, old, n1 )
@@ -337,6 +329,7 @@ class MaxGate extends Gate {
        // output = 0;
 
     }
+    //do our check here whether we need to change gate value based on new wire input value
     public void inputChange( float time, int o, int n ) {
 
         //System.out.println("max gate");
@@ -357,13 +350,11 @@ class MaxGate extends Gate {
         } else{
             newOutput = 0;
         }
-
+        //similar to the min gate, just starting from index 0 to 2
         if (output != newOutput) {
                 final int old = output;
                 final int n1 = newOutput;
-                //System.out.println(old + " oldd");
-                //System.out.println(n1 + " newww");
-                //System.out.println(time + delay + " plus");
+
                 Simulation.schedule(
                         time + delay,
                         (float t) -> outputChange( t, old, n1 )
@@ -406,8 +397,8 @@ class NegGate extends Gate {
     //do our check here whether we need to change gate value based on new wire input value
     public void inputChange( float time, int o, int n ) {
         //System.out.println(o + " neg gate " + output + " "+ n);
-       // if(o != n){
 
+            //take the inverse of the value, unless unknown
             final int newOutput;
             if(n == 0){
                 newOutput = 2;
@@ -416,6 +407,7 @@ class NegGate extends Gate {
             } else{
                 newOutput = 0;
             }
+            //check if new output is different since we don't need to do anything otherwise
             if(output != newOutput){
                 final int old = output;
                 Simulation.schedule(
@@ -424,9 +416,7 @@ class NegGate extends Gate {
                 );
                 this.output = newOutput;
             }
-            //TernaryLogic.printGatesOutputs();
 
-        //}
 
     }
     //public void outputChange( float time, int o, int n ) {}
@@ -448,7 +438,7 @@ class TrueGate extends Gate {
         ScanSupport.lineEnd( sc,
             "TrueGate '" + name + "'"
         );
-
+        //must change to 0 for the output transition
         Simulation.schedule(
                 delay,
                 (float t) -> this.outputChange( t, output, 0 )
@@ -496,7 +486,7 @@ class FalseGate extends Gate {
         ScanSupport.lineEnd( sc,
             "FalseGate '" + name + "'"
         );
-
+        //output transition schedule method call
         Simulation.schedule(
                 delay,
                 (float t) -> this.outputChange( t, output, 0 )
@@ -542,7 +532,7 @@ class UnknownGate extends Gate {
         ScanSupport.lineEnd( sc,
             "UnknownGate '" + name + "'"
         );
-
+        //NOTE, this is 2 because when 1 it is true. Unique from the other schedule calls in the constructor
         Simulation.schedule(
                 delay,
                 (float t) -> this.outputChange( t, output, 2 )
@@ -677,16 +667,14 @@ abstract class Gate{
         }
     }
     public void inputChange( float time, int o, int n ){
-        System.out.println(" yee");
+        System.out.println(" test"); //this will never print, will go into subclass inputChange functions
     }
-
+    //this is the main output change for all Gate classes. VERY IMPORTANT. This is what prints when a gate val changes.
     public void outputChange(float time, int old, int n){
 
-
         this.output = n;
-
-
         System.out.println("time: " + time + " gate name: " + this.name + " old val: " + old + " new val: " + n);
+        //update all the outgoing wires when the gate value changes
         for(Wire w: outgoing){
             //System.out.println("wire wire for loop" + w.toString());
             Simulation.schedule(
@@ -822,6 +810,17 @@ public class TernaryLogic{
         return s.matches("[a-zA-Z0-9]*");
     }
 
+    /** check the sanity of the network
+    *Created by Douglas Jones
+     */
+    public static void checkNetwork() {
+        for ( Gate g: gates ) {
+            g.check();
+        }
+        for ( Wire w: wires ) {
+            w.check();
+        }
+    }
 
     public static void main(String[] args) {
         if( args.length < 1){
@@ -835,6 +834,7 @@ public class TernaryLogic{
              */
             Scanner sc = new Scanner( new File( args[0] ) );
             initializeGatesAndWires( sc );
+            checkNetwork();
             if (Errors.count() > 0) {
                 printGatesAndWires();
             } else {
