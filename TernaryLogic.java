@@ -673,8 +673,7 @@ abstract class Gate{
     //this is the main output change for all Gate classes. VERY IMPORTANT. This is what prints when a gate val changes.
     public void outputChange(float time, int old, int n){
 
-        this.output = n;
-        System.out.println("time: " + time + " gate name: " + this.name + " old val: " + old + " new val: " + n);
+        System.out.println(time + " " + this.name + " " + n);
         //update all the outgoing wires when the gate value changes
         for(Wire w: outgoing){
             //System.out.println("wire wire for loop" + w.toString());
