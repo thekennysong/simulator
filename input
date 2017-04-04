@@ -1,4 +1,17 @@
-gate A min 4 1.0
-gate B max 2 0.5
-wire A B 0.1
-wire B A 0.3
+gate TIMER istrue     9.0
+wire TIMER TIMER      1.0
+
+gate ENABLE isunknown 1.0
+wire TIMER ENABLE     1.0
+
+gate CLOCK isfalse    0.5
+gate CONTROL min 2    0.5
+wire CLOCK CONTROL    0.5
+wire CONTROL CLOCK    0.5
+wire ENABLE CONTROL   0.5
+
+gate FLIP neg         0.5
+gate MIX max 2        0.5
+wire TIMER FLIP       1.0
+wire FLIP MIX         1.0
+wire MIX MIX          1.0

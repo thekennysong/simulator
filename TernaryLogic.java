@@ -120,7 +120,7 @@ class Simulation {
          *  </PRE>
          */
         static void schedule( float time, Action act ) {
-                System.out.println("schedule called " + time);
+               // System.out.println("schedule called " + time);
 
                 Event e = new Event();
                 e.time = time;
@@ -133,7 +133,10 @@ class Simulation {
          */
         static void run() {
             while (!eventSet.isEmpty()) {
+                    //System.out.println(eventSet.size() + " size");
+                    //TernaryLogic.printGatesOutputs();
                     Event e = eventSet.remove();
+                    //System.out.println(e.act);
                     e.act.trigger( e.time );
             }
         }
@@ -144,8 +147,7 @@ class Wire{
     Gate source;
     Gate destination;
     float delay;
-    int input  = 1;
-    int output = 1;
+    int value = 1;
     //private int dir;
 
     public Wire(String source, String destination, Scanner sc){
@@ -197,27 +199,47 @@ class Wire{
         //System.out.println(this.source + "src");
     }
 
-    void inputChange(float t, int o, int n){
-        System.out.println("wire input change called " + o +  " " + n);
+    public void inputChange(float t, int o, int n){
+        //System.out.println(o + " !!!!!wire " + n);
         if(o != n){
-            System.out.println("wire input change");
-            Simulator.schedule(
+            // System.out.println(o + " wire input change " + n);
+            // Simulator.schedule(
+            //     t+delay,
+            //     (float time)->this.oc( time, this.value, n )
+            // );
+
+            Simulation.schedule(
                 t+delay,
-                (float time)->Wire.this.outputChange( time, o, n )
-            );
+                new Simulation.Action(){
+                    public void trigger(float time){
+                        outputChange(time, o, n);
+                    }
+            });
+            this.value = n;
+            //System.out.println(o + " diff " + this.value );
         }
     }
-    void outputChange(float time, int o, int n){
+    public void outputChange(float time, int o, int n){
 
-        System.out.println("wire output change");
-        Simulator.schedule(
+        //System.out.println("helloooooooo");
+        //System.out.println(destination.type);
+
+        Simulation.schedule(
             time,
-            (float t)->destination.inputChange( t, o, n )
-        );
+            new Simulation.Action(){
+                public void trigger(float t){
+                    destination.inputChange(t, o, n);
+                }
+        });
+
+        // Simulator.schedule(
+        //     time,
+        //     (float t)->destination.inputChange( t, o, n )
+        // );
     }
 
     public String toString(){
-        return "wire " + source + " " + destination + " " + delay;
+        return "wire " + source + " " + destination + " " + delay + " " + value;
     }
 
 
@@ -233,12 +255,13 @@ class MinGate extends Gate {
         //if(type != "isunknown"){
         //Before the simulation begins, each such gate should immediately schedule an output transition from unknown to false (represented by the value 0) at a time equal to the gate's delay.
         //System.out.println(incoming.size() + "incoming");
-        //System.out.println(outgoing.size() + "outgoing");
+        //System.out.println(output + " min");
         Simulation.schedule(
                 delay,
                 (float t) -> this.outputChange( t, output, 0 )
         );
-        output = 0;
+        //System.out.println(output + " min");
+        //output = 0;
         // } else{
         //     Simulation.schedule(
         //             delay,
@@ -250,7 +273,7 @@ class MinGate extends Gate {
 
     public void inputChange( float time, int o, int n ) {
 
-        System.out.println("gate change");
+        //System.out.println("min gate");
         for(int i = 0; i < 3; i++){
             if(o == i){
                 inputCounts[i] = inputCounts[i] - 1;
@@ -259,60 +282,31 @@ class MinGate extends Gate {
                 inputCounts[i] = inputCounts[i] + 1;
             }
         }
-
-        int smallest = Integer.MAX_VALUE;
-        int smallestIndex = -1;
-        for(int i=0; i< 3; i++) {
-            if(inputCounts[i] > 0 && inputCounts[i] < smallest) {
-                smallest = inputCounts[i];
-                smallestIndex = i;
-            }
+        final int newOutput;
+        if(inputCounts[0] > 0){
+            newOutput = 0;
+        } else if(inputCounts[1] > 0){
+            newOutput = 1;
+        } else{
+            newOutput = 2;
         }
-        if(smallestIndex == -1){
-            if(inputCounts[0] == inputCounts[1] && inputCounts[0] == inputCounts[2] && inputCounts[0] > 0){
-                smallestIndex = 0;
-            } else if(inputCounts[1] == inputCounts[2] && inputCounts[1] > 0){
-                smallestIndex = 1;
-            } else if(inputCounts[0] == 0 && inputCounts[1] == 0 && inputCounts[2] > 0){
-                smallestIndex = 2;
-            } else if(inputCounts[2] == 0 && inputCounts[1] == 0 && inputCounts[0] == 0){
-                smallestIndex  = 0;
-            }
-
-        }
-        final int newOutput = smallestIndex;
+        //final int newOutput = smallestIndex;
 
         if (output != newOutput) {
                 final int old = output;
                 final int n1 = newOutput;
-                System.out.println(old + " old");
-                System.out.println(n1 + " new");
+                //System.out.println(old + " old");
+                //System.out.println(n1 + " new");
                 Simulation.schedule(
                         time + delay,
-                        (float t) -> outputChange( t, old, n1 )
+                        (float t) -> this.outputChange( t, old, n1 )
                 );
-                output = newOutput;
+                this.output = newOutput;
+
+                //TernaryLogic.printGatesOutputs();
         }
     }
-    // public void outputChange(float time, int old, int n){
 
-    //    // System.out.println("gate output change");
-    //     System.out.println("time: " + time + " gate name: " + this.name + " old val: " + old + " new val: " + n);
-    //     for(Wire w: outgoing){
-    //         Simulation.schedule(
-    //                 time,
-    //                 (float t) -> w.inputChange( t, old, n )
-    //         );
-    //     }
-
-    // }
-
-    // void outChange(float time, int old, int n){
-    //     Simulation.schedule(
-    //             time,
-    //             (float t)->v.selectRoad( this ).arrivalEvent( t, v )
-    //     );
-    // }
     /** output this Intersection in a format like that used for input
      */
     public String toString() {
@@ -340,12 +334,12 @@ class MaxGate extends Gate {
                 delay,
                 (float t) -> this.outputChange( t, output, 0 )
         );
-        output = 0;
+       // output = 0;
 
     }
     public void inputChange( float time, int o, int n ) {
 
-        System.out.println("gate change");
+        //System.out.println("max gate");
         for(int i = 0; i < 3; i++){
             if(o == i){
                 inputCounts[i] = inputCounts[i] - 1;
@@ -355,40 +349,28 @@ class MaxGate extends Gate {
             }
         }
 
-        int largest = Integer.MIN_VALUE;
-        int largestIndex = -1;
-        for(int i=0; i< 3; i++) {
-            if(inputCounts[i] > 0 && inputCounts[i] > largest) {
-                largest = inputCounts[i];
-                largestIndex = i;
-            }
+        final int newOutput;
+        if(inputCounts[2] > 0){
+            newOutput = 0;
+        } else if(inputCounts[1] > 0){
+            newOutput = 1;
+        } else{
+            newOutput = 0;
         }
-        if(largestIndex == -1){
-
-            if(inputCounts[2] == inputCounts[1] && inputCounts[2] == inputCounts[0] && inputCounts[2] > 0){
-                largestIndex = 2;
-            } else if(inputCounts[1] == inputCounts[2] && inputCounts[1] > 0){
-                largestIndex = 1;
-            } else if(inputCounts[2] == 0 && inputCounts[1] == 0 && inputCounts[0] > 0){
-                largestIndex = 0;
-            } else if(inputCounts[2] == 0 && inputCounts[1] == 0 && inputCounts[0] == 0){
-                largestIndex  = 0;
-            }
-
-        }
-        final int newOutput = largestIndex;
 
         if (output != newOutput) {
                 final int old = output;
                 final int n1 = newOutput;
-                System.out.println(old + " oldd");
-                System.out.println(n1 + " newww");
+                //System.out.println(old + " oldd");
+                //System.out.println(n1 + " newww");
                 //System.out.println(time + delay + " plus");
                 Simulation.schedule(
                         time + delay,
                         (float t) -> outputChange( t, old, n1 )
                 );
-                output = newOutput;
+                this.output = newOutput;
+
+                //TernaryLogic.printGatesOutputs();
         }
     }
 
@@ -409,13 +391,20 @@ class NegGate extends Gate {
     public NegGate( String name, Scanner sc, Float delay ) {
         super( name, "neg", delay, 1 );
 
+
         ScanSupport.lineEnd( sc,
             "NegGate '" + name + "'"
         );
 
+        Simulation.schedule(
+                delay,
+                (float t) -> this.outputChange( t, output, 0 )
+        );
+        //output = 0;
+
     }
     public void inputChange( float time, int o, int n ) {
-
+        //System.out.println("neg gate");
         if(o != n){
             final int newOutput;
             if(n == 0){
@@ -428,9 +417,11 @@ class NegGate extends Gate {
 
             Simulation.schedule(
                     time + delay,
-                    (float t) -> outputChange( t, output, newOutput )
+                    (float t) -> this.outputChange( t, output, newOutput )
             );
-            output = newOutput;
+            this.output = newOutput;
+
+            //TernaryLogic.printGatesOutputs();
 
         }
 
@@ -455,9 +446,14 @@ class TrueGate extends Gate {
             "TrueGate '" + name + "'"
         );
 
+        Simulation.schedule(
+                delay,
+                (float t) -> this.outputChange( t, output, 0 )
+        );
+        //output = 0;
     }
     public void inputChange( float time, int o, int n ) {
-
+        //System.out.println("true gate");
         if(o != n){
             final int newOutput;
             if( n == 2 ){
@@ -470,7 +466,9 @@ class TrueGate extends Gate {
                     time + delay,
                     (float t) -> outputChange( t, output, newOutput )
             );
-            output = newOutput;
+            this.output = newOutput;
+
+            //TernaryLogic.printGatesOutputs();
         }
 
     }
@@ -494,9 +492,14 @@ class FalseGate extends Gate {
             "FalseGate '" + name + "'"
         );
 
+        Simulation.schedule(
+                delay,
+                (float t) -> this.outputChange( t, output, 0 )
+        );
+        //output = 0;
     }
     public void inputChange( float time, int o, int n ) {
-
+        //System.out.println("false gate");
         if(o != n){
             final int newOutput;
             if( n == 0 ){
@@ -509,7 +512,9 @@ class FalseGate extends Gate {
                     time + delay,
                     (float t) -> outputChange( t, output, newOutput )
             );
-            output = newOutput;
+            this.output = newOutput;
+
+            //TernaryLogic.printGatesOutputs();
         }
 
     }
@@ -532,11 +537,16 @@ class UnknownGate extends Gate {
             "UnknownGate '" + name + "'"
         );
 
+        Simulation.schedule(
+                delay,
+                (float t) -> this.outputChange( t, output, 2 )
+        );
+
 
     }
 
     public void inputChange( float time, int o, int n ) {
-
+        //System.out.println("unknown gate");
         if(o != n){
             final int newOutput;
             if( n == 1 ){
@@ -549,7 +559,10 @@ class UnknownGate extends Gate {
                     time + delay,
                     (float t) -> outputChange( t, output, newOutput )
             );
-            output = newOutput;
+            this.output = newOutput;
+            //System.out.println("outp");
+
+            //TernaryLogic.printGatesOutputs();
         }
 
     }
@@ -575,7 +588,7 @@ abstract class Gate{
 
     public int[] inputCounts = {0, 0, 0};
 
-    int output = 1;
+    public int output = 1;
     LinkedList <Wire> incoming = new LinkedList <Wire> ();
     LinkedList <Wire> outgoing = new LinkedList <Wire> ();
 
@@ -657,17 +670,21 @@ abstract class Gate{
         }
     }
     public void inputChange( float time, int o, int n ){
-
+        System.out.println(" yee");
     }
 
     public void outputChange(float time, int old, int n){
 
-       // System.out.println("gate output change");
+
+        this.output = n;
+
+
         System.out.println("time: " + time + " gate name: " + this.name + " old val: " + old + " new val: " + n);
         for(Wire w: outgoing){
+            //System.out.println("wire wire for loop" + w.toString());
             Simulation.schedule(
                     time,
-                    (float t) -> w.inputChange( t, old, n )
+                    (float t) -> w.inputChange( t, w.value, n )
             );
         }
 
@@ -736,21 +753,24 @@ public class TernaryLogic{
                 String destination = sc.next();
 
 
-                if(gateNames.contains(source) && gateNames.contains(destination) && !source.equals(destination)){
+                if(gateNames.contains(source) && gateNames.contains(destination)){
                     wires.add( new Wire( source, destination, sc) );
                 } else{
                     if(!gateNames.contains(source) || !gateNames.contains(destination)){
                         Errors.fatal(
                             "wire " + source + " " + destination +  " destination and/or source not entered correctly"
                         );
-                    } else if(source.equals(destination)){
-                        Errors.fatal(
-                            "wire " + source + " " + destination +  " cannot have same source and destination"
-                        );
                     }
+                    //apparently can have same source and destination according to mp4 example
+                    // else if(source.equals(destination)){
+                    //     Errors.fatal(
+                    //         "wire " + source + " " + destination +  " cannot have same source and destination"
+                    //     );
+                    // }
                 }
 
             } else{
+                //System.out.println(command);
                 Errors.fatal(command + " found where 'gate' or 'wire' was suppose to be");
             }
         }
@@ -773,7 +793,15 @@ public class TernaryLogic{
       //   }
 
     }
+    public static void printGatesOutputs(){
+        for (Gate g: gates) {
+            System.out.println( g.name + " " + g.output );
+        }
 
+        for (Wire r: wires) {
+            System.out.println( r );
+        }
+    }
     private static void printGatesAndWires(){
         for (Gate g: gates) {
             System.out.println( g.toString() );
