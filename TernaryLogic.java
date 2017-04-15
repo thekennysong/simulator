@@ -197,45 +197,29 @@ class Wire{
         }
 
     }
-    //input change, check if we need to change the wire value and call a corresponding input change for gates
-    public void inputChange(float t, int o, int n){
+    // ***** Logic Simulation *****
 
-        //o and this.value are the same value, in that it is the old wire value
-        if(o != n){
-            // Simulator.schedule(
-            //     t+delay,
-            //     (float time)->outputChange( time, this.value, n )
-            // );
-            //
-            //Doing lambda and regular would take same amoutn of code
-            Simulation.schedule(
-                t+delay,
-                new Simulation.Action(){
-                    public void trigger(float time){
-                        outputChange(time, o, n);
-                    }
-            });
-            this.value = n;
-
-        }
-    }
-    public void outputChange(float time, int o, int n){
-
-
-        //are able to trigger input change for wire that has changed. don't have to worry about direction since can use destination variable
+    /** Event service routine called when the input to a wire changes
+     *  @param time the time at which the input changes
+     *  @param old the previous logic value carried over this wire
+     *  @param new the new logic value carried over this wire
+     */
+    public void inputChangeEvent( float time, int oldv, int newv ) {
         Simulation.schedule(
-            time,
-            new Simulation.Action(){
-                public void trigger(float t){
-                    destination.inputChange(t, o, n);
-                }
-        });
+            time + delay,
+            (float t) -> outputChangeEvent( t, oldv, newv )
+        );
+    };
 
-        // Simulator.schedule(
-        //     time,
-        //     (float t)->destination.inputChange( t, o, n )
-        // );
-    }
+    /** Event service routine called when the output of a wire changes
+     *  @param time the time at which the output changes
+     *  @param old the previous logic value carried over this wire
+     *  @param new the new logic value carried over this wire
+     */
+    public void outputChangeEvent( float time, int oldv, int newv ) {
+        // this version is optimized, we could have scheduled an event
+        destination.inputChangeEvent( time, oldv, newv );
+    };
     //print values of the wire
     public String toString(){
         return "wire " + source + " " + destination + " " + delay + " " + value;
@@ -256,47 +240,20 @@ class MinGate extends Gate {
             "MinGate '" + name + "'"
         );
 
-        //Before the simulation begins, each such gate should immediately schedule an output transition from unknown to false (represented by the value 0) at a time equal to the gate's delay.
-        Simulation.schedule(
-                delay,
-                (float t) -> this.outputChange( t, output, 0 )
-        );
+
 
     }
 
-    public void inputChange( float time, int o, int n ) {
+    // ***** Logic Simulation for MinGate *****
 
-        //System.out.println("min gate");
-        for(int i = 0; i < 3; i++){
-            if(o == i){
-                inputCounts[i] = inputCounts[i] - 1;
-            }
-            if(n == i){
-                inputCounts[i] = inputCounts[i] + 1;
-            }
-        }
-        final int newOutput;
-        if(inputCounts[0] > 0){
-            newOutput = 0;
-        } else if(inputCounts[1] > 0){
-            newOutput = 1;
-        } else{
-            newOutput = 2;
-        }
-
-        //if current out is not the same as new, we will proceed with changing wires coming from this gate
-        if (output != newOutput) {
-                final int old = output;
-                final int n1 = newOutput;
-
-                Simulation.schedule(
-                        time + delay,
-                        (float t) -> this.outputChange( t, old, n1 )
-                );
-                this.output = newOutput;
-
-                //TernaryLogic.printGatesOutputs();
-        }
+    /** Every subclass of Gate must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected int logicValue() {
+        // find the minimum of all the inputs
+        int newOutput = 0;
+        while (inputCounts[newOutput] == 0) newOutput++;
+        return newOutput;
     }
 
     /** output this Intersection in a format like that used for input
@@ -321,48 +278,21 @@ class MaxGate extends Gate {
             "MaxGate '" + name + "'"
         );
 
-        //before simulation scheudle output transition from 1 to 0.
-        Simulation.schedule(
-                delay,
-                (float t) -> this.outputChange( t, output, 0 )
-        );
+
        // output = 0;
 
     }
-    //do our check here whether we need to change gate value based on new wire input value
-    public void inputChange( float time, int o, int n ) {
 
-        //System.out.println("max gate");
-        for(int i = 0; i < 3; i++){
-            if(o == i){
-                inputCounts[i] = inputCounts[i] - 1;
-            }
-            if(n == i){
-                inputCounts[i] = inputCounts[i] + 1;
-            }
-        }
+    // ***** Logic Simulation for MaxGate *****
 
-        final int newOutput;
-        if(inputCounts[2] > 0){
-            newOutput = 0;
-        } else if(inputCounts[1] > 0){
-            newOutput = 1;
-        } else{
-            newOutput = 0;
-        }
-        //similar to the min gate, just starting from index 0 to 2
-        if (output != newOutput) {
-                final int old = output;
-                final int n1 = newOutput;
-
-                Simulation.schedule(
-                        time + delay,
-                        (float t) -> outputChange( t, old, n1 )
-                );
-                this.output = newOutput;
-
-                //TernaryLogic.printGatesOutputs();
-        }
+    /** Every subclass of Gate must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected int logicValue() {
+        // find the maximum of all the inputs
+        int newOutput = 2;
+        while (inputCounts[newOutput] == 0) newOutput--;
+        return newOutput;
     }
 
     /** output this Intersection in a format like that used for input
@@ -387,37 +317,21 @@ class NegGate extends Gate {
             "NegGate '" + name + "'"
         );
 
-        Simulation.schedule(
-                delay,
-                (float t) -> this.outputChange( t, output, 0 )
-        );
         //output = 0;
 
     }
-    //do our check here whether we need to change gate value based on new wire input value
-    public void inputChange( float time, int o, int n ) {
-        //System.out.println(o + " neg gate " + output + " "+ n);
-
-            //take the inverse of the value, unless unknown
-            final int newOutput;
-            if(n == 0){
-                newOutput = 2;
-            } else if(n == 1){
-                newOutput = 1;
-            } else{
-                newOutput = 0;
-            }
-            //check if new output is different since we don't need to do anything otherwise
-            if(output != newOutput){
-                final int old = output;
-                Simulation.schedule(
-                        time + delay,
-                        (float t) -> this.outputChange( t, old, newOutput )
-                );
-                this.output = newOutput;
-            }
 
 
+    // ***** Logic Simulation for NegGate *****
+
+    /** Every subclass of Gate must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected int logicValue() {
+        // Warning this is mildly tricky code
+        int newOutput = 2;
+        while (inputCounts[2 - newOutput] == 0) newOutput--;
+        return newOutput;
     }
     //public void outputChange( float time, int o, int n ) {}
     /** output this Intersection in a format like that used for input
@@ -435,37 +349,37 @@ class TrueGate extends Gate {
     public TrueGate( String name, Scanner sc, Float delay ) {
         super( name, "istrue", delay, 1 );
 
+        //inputs = 1; // it is a one-input gate
+       // totalInputsPermitted = 1;
+
         ScanSupport.lineEnd( sc,
             "TrueGate '" + name + "'"
         );
-        //must change to 0 for the output transition
-        Simulation.schedule(
-                delay,
-                (float t) -> this.outputChange( t, output, 0 )
-        );
+
         //output = 0;
     }
-    //do our check here whether we need to change gate value based on new wire input value
-    public void inputChange( float time, int o, int n ) {
-        //System.out.println(o + " true gate " + output + " "+ n);
-      //  if(o != n){
-            final int newOutput;
-            if( n == 2 ){
-                newOutput = 2;
-            } else{
-                newOutput = 0;
-            }
-            if(output != newOutput){
-                final int old = output;
-                Simulation.schedule(
-                        time + delay,
-                        (float t) -> this.outputChange( t, old, newOutput )
-                );
-                this.output = newOutput;
-            }
-            //TernaryLogic.printGatesOutputs();
-       // }
 
+    // ***** Logic Simulation for IsTGate *****
+
+    /** Sanity check for IsTGate */
+    public void check() {
+        super.check();
+
+        // now change the output from unknown to false
+        Simulation.schedule(
+            delay,
+            (float t) -> this.outputChangeEvent( t, 1, 0 )
+        );
+        output = 0;
+    }
+
+    /** Every subclass of Gate must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected int logicValue() {
+        int newOutput = 0;
+        if (inputCounts[2] != 0) newOutput = 2;
+        return newOutput;
     }
 
     /** output this Intersection in a format like that used for input
@@ -483,36 +397,36 @@ class FalseGate extends Gate {
     public FalseGate( String name, Scanner sc, Float delay ) {
         super( name, "isfalse", delay, 1 );
 
+        //totalInputsPermitted = 1;
+
         ScanSupport.lineEnd( sc,
             "FalseGate '" + name + "'"
         );
-        //output transition schedule method call
-        Simulation.schedule(
-                delay,
-                (float t) -> this.outputChange( t, output, 0 )
-        );
+
         //output = 0;
     }
-    //do our check here whether we need to change gate value based on new wire input value
-    public void inputChange( float time, int o, int n ) {
-        //o is old input wire value, n is new input wire value, output is old gate value
 
-            final int newOutput;
-            if( n == 0 ){
-                newOutput = 2;
-            } else{
-                newOutput = 0;
-            }
-            if(output != newOutput){
-                final int old = output;
-                Simulation.schedule(
-                        time + delay,
-                        (float t) -> this.outputChange( t, old, newOutput )
-                );
-                this.output = newOutput;
-            }
+    // ***** Logic Simulation for IsFGate *****
 
+    /** Sanity check for IsFGate */
+    public void check() {
+        super.check();
 
+        // now change the output from unknown to false
+        Simulation.schedule(
+            delay,
+            (float t) -> this.outputChangeEvent( t, 1, 0 )
+        );
+        output = 0;
+    }
+
+    /** Every subclass of Gate must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected int logicValue() {
+        int newOutput = 0;
+        if (inputCounts[0] != 0) newOutput = 2;
+        return newOutput;
     }
     /** output this Intersection in a format like that used for input
      */
@@ -529,40 +443,36 @@ class UnknownGate extends Gate {
     public UnknownGate( String name, Scanner sc, Float delay ) {
         super( name, "isunknown", delay, 1 );
 
+        //totalInputsPermitted = 1;
+
         ScanSupport.lineEnd( sc,
             "UnknownGate '" + name + "'"
-        );
-        //NOTE, this is 2 because when 1 it is true. Unique from the other schedule calls in the constructor
-        Simulation.schedule(
-                delay,
-                (float t) -> this.outputChange( t, output, 2 )
         );
 
 
     }
-    //do our check here whether we need to change gate value based on new wire input value
-    public void inputChange( float time, int o, int n ) {
-        //System.out.println(o + " unknown gate " + output + " "+ n);
-       // if(o != n){
-            final int newOutput;
-            if( n == 1 ){
-                newOutput = 2;
-            } else{
-                newOutput = 0;
-            }
-            if(output != newOutput){
-                final int old = output;
-                Simulation.schedule(
-                        time + delay,
-                        (float t) -> outputChange( t, old, newOutput )
-                );
-                this.output = newOutput;
-            }
-            //System.out.println("outp");
 
-            //TernaryLogic.printGatesOutputs();
-        //}
+    // ***** Logic Simulation for IsUGate *****
 
+    /** Sanity check for IsUGate */
+    public void check() {
+        super.check();
+
+        // now change the output from unknown to true
+        Simulation.schedule(
+            delay,
+            (float t) -> this.outputChangeEvent( t, 1, 2 )
+        );
+        output = 2;
+    }
+
+    /** Every subclass of Gate must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected int logicValue() {
+        int newOutput = 0;
+        if (inputCounts[1] != 0) newOutput = 2;
+        return newOutput;
     }
 
     /** output this Intersection in a format like that used for input
@@ -584,9 +494,9 @@ abstract class Gate{
     //int totalInputs = 0;
     int totalInputsPermitted = 0;
 
-    public int[] inputCounts = {0, 0, 0};
+    public int[] inputCounts = new int[3];
 
-    public int output = 1;
+    public int output;
     LinkedList <Wire> incoming = new LinkedList <Wire> ();
     LinkedList <Wire> outgoing = new LinkedList <Wire> ();
 
@@ -660,30 +570,67 @@ abstract class Gate{
         outgoing.add( w );
     }
     public void check() {
-        if (incoming.size() > totalInputsPermitted ) {
+        if (incoming.size() < totalInputsPermitted ) {
             Errors.warn(
                 this.toString() +
                 ": too many incoming wires"
             );
-        }
-    }
-    public void inputChange( float time, int o, int n ){
-        System.out.println(" test"); //this will never print, will go into subclass inputChange functions
-    }
-    //this is the main output change for all Gate classes. VERY IMPORTANT. This is what prints when a gate val changes.
-    public void outputChange(float time, int old, int n){
-
-        System.out.println(time + " " + this.name + " " + n);
-        //update all the outgoing wires when the gate value changes
-        for(Wire w: outgoing){
-            //System.out.println("wire wire for loop" + w.toString());
-            Simulation.schedule(
-                    time,
-                    (float t) -> w.inputChange( t, w.value, n )
+        } else if (incoming.size() > totalInputsPermitted) {
+            Errors.warn(
+                this.toString() + " -- has too many inputs."
             );
         }
 
+        // initially, all the inputs are unknown
+        inputCounts[0] = 0;
+        inputCounts[1] = totalInputsPermitted;
+        inputCounts[2] = 0;
+
+        // and initially, the output is unknown
+        output = 1;
+
     }
+    /** Every subclass must define this function;
+     *  @return the new logic value, a function of <TT>inputCounts</TT>;
+     */
+    protected abstract int logicValue();
+
+    /** Event service routine called when the input to a gate changes
+     *  @param time the time at which the input changes
+     *  @param old the previous logic value carried over this input
+     *  @param new the new logic value carried over this input
+     */
+    public void inputChangeEvent( float time, int oldv, int newv ) {
+        inputCounts[oldv]--;
+        inputCounts[newv]++;
+        final int newOut = logicValue();
+        if (output != newOut) {
+            final int old = output;
+            Simulation.schedule(
+                time + delay,
+                (float t) -> outputChangeEvent( t, old, newOut )
+            );
+            output = newOut;
+        }
+    };
+    /** Event service routine called when the output of a gate changes
+     *  @param time the time at which the output changes
+     *  @param old the previous logic value of this gate's output
+     *  @param new the new logic value of this gate's output
+     */
+    public void outputChangeEvent( float time, int oldv, int newv ) {
+        // produce the output required by MP4
+        System.out.println(
+            "At " + time + " gate " + name +
+            " output changed from " + oldv + " to " + newv
+        );
+
+        // send the new value out to all the outgoing wires
+        for ( Wire w: outgoing ) {
+            // this is optimized, we could have scheduled an event
+            w.inputChangeEvent( time, oldv, newv );
+        }
+    };
     /**
      *  toString method is for part b answer!
      * @return part b answer here
