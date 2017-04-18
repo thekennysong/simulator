@@ -619,11 +619,6 @@ abstract class Gate{
      *  @param new the new logic value of this gate's output
      */
     public void outputChangeEvent( float time, int oldv, int newv ) {
-        // produce the output required by MP4
-        System.out.println(
-            "At " + time + " gate " + name +
-            " output changed from " + oldv + " to " + newv
-        );
 
         // send the new value out to all the outgoing wires
         for ( Wire w: outgoing ) {
@@ -638,7 +633,23 @@ abstract class Gate{
     public String toString(){
         return "gate " + name + " " + type + " ";
     }
+    int lastPrinted = 1;
 
+    public String printValue(){
+
+        //System.out.println(lastPrinted + " " + output);
+        String[][] values = {
+            {"|    ", "|_   ",  "|___ "},
+            {" _|  ", "  |  ", "  |_ "},
+            {" ___|",  "   _|", "    |"}
+        };
+
+        String returnValue = values[lastPrinted][output];
+        lastPrinted = output;
+
+        return returnValue;
+
+    }
 
 }
 
@@ -717,33 +728,45 @@ public class TernaryLogic{
             }
         }
 
-    /**
-     * Please ignore this comment block.
-     */
-      // for(Wire wire: wires){
-      //       if(name.equals(wire.destination)){
-      //           totalInputs++;
-      //       }
-      //   }
-
-      //   if(totalInputs == 0){
-      //       Errors.fatal("Gate has no inputs");
-      //   }
-
-      //   if(totalInputs > totalInputsPermitted){
-      //       Errors.fatal("Total inputs to gate " + name + " exceeds it total input permitted");
-      //   }
-
     }
-    public static void printGatesOutputs(){
-        for (Gate g: gates) {
-            System.out.println( g.name + " " + g.output );
-        }
 
-        for (Wire r: wires) {
-            System.out.println( r );
+    private static float printInterval;
+
+    public static void initPrint( float i ) {
+        printInterval = i;
+        Simulation.schedule(
+            0.0f,
+            (float t) -> printGates( t )
+        );
+
+        for( Gate g: gates ) {
+            String updatedName = g.name;
+            if( updatedName.length() < 5){
+                while(updatedName.length() < 5){
+                    updatedName = updatedName + " ";
+                }
+            } else if (updatedName.length() > 5){
+                updatedName = updatedName.substring(0, 5);
+            }
+
+            System.out.print( " " + updatedName );
+
         }
+        System.out.println();
     }
+
+    private static void printGates( float time ) {
+        for( Gate g: gates ) {
+            System.out.print( " " + g.printValue() );
+        }
+        System.out.println();
+        //System.out.print(printInterval);
+        Simulation.schedule(
+            time + printInterval,
+            (float t) -> printGates( t )
+        );
+    }
+
     private static void printGatesAndWires(){
         for (Gate g: gates) {
             System.out.println( g.toString() );
@@ -772,7 +795,7 @@ public class TernaryLogic{
     public static void main(String[] args) {
         if( args.length < 1){
             Errors.fatal( "Missing file name on command line" );
-        } else if(args.length > 1){
+        } else if(args.length > 2){
             Errors.fatal( "Unexpected command line args" );
         } else try{
             /**
@@ -780,11 +803,13 @@ public class TernaryLogic{
              * @param  args[0]
              */
             Scanner sc = new Scanner( new File( args[0] ) );
+            float p  = Float.parseFloat( args[1] );
             initializeGatesAndWires( sc );
             checkNetwork();
             if (Errors.count() > 0) {
                 printGatesAndWires();
             } else {
+                initPrint(p);
                 //System.out.println("here");
                 Simulation.run();
             }
