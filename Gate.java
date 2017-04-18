@@ -160,7 +160,9 @@ abstract class Gate{
 
     public String printValue(){
 
-        //System.out.println(lastPrinted + " " + output);
+        //2-D array helps us avoid a bunch of if statements/switch statements
+        //2-D array to determine the value row 1 is when output was false, row 2 unknown, row 3 true.
+        //column 1 is now false, column 2 is now unknown, column 3 is now true.
         String[][] values = {
             {"|    ", "|_   ",  "|___ "},
             {" _|  ", "  |  ", "  |_ "},
@@ -168,6 +170,7 @@ abstract class Gate{
         };
 
         String returnValue = values[lastPrinted][output];
+        //store last printed value, this is important
         lastPrinted = output;
 
         return returnValue;
